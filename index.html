@@ -13,7 +13,7 @@ h1{font-size:20px;margin:0} .sub{font-size:12px;color:#a6a3b2;margin-top:4px}
 .pill{font-size:12px;padding:7px 10px;border:1px solid #4a345d;background:#21152c;color:#e4c8ff;border-radius:999px}
 main{max-width:1400px;margin:auto;padding:24px clamp(16px,4vw,44px) 48px}
 .notice{border:1px solid #58452b;background:#211b12;color:#f2d9a8;padding:13px 15px;border-radius:12px;font-size:13px;line-height:1.5;margin-bottom:20px}
-.stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin-bottom:20px}
+.stats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin-bottom:20px}
 .stat,.panel{background:#15151d;border:1px solid #2a2935;border-radius:16px}
 .stat{padding:17px}.stat-label{color:#a6a3b2;font-size:12px}.stat-num{font-size:27px;font-weight:750;margin-top:8px}
 .panel{padding:18px;margin-bottom:18px}.panel-head{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:15px}
@@ -23,7 +23,7 @@ label{font-size:12px;color:#c7c4d1;display:flex;flex-direction:column;gap:7px}
 input,select,textarea{width:100%;background:#0e0e15;color:#f5f5f7;border:1px solid #343340;border-radius:9px;padding:11px;font:inherit;font-size:13px;min-width:0}
 textarea{min-height:85px;resize:vertical}
 button,.filebtn{border:1px solid #454151;background:#252430;color:#fff;padding:10px 13px;border-radius:9px;font-weight:650;font-size:12px;cursor:pointer}
-button.primary{background:linear-gradient(135deg,#c52b87,#7046df);border:0}button:hover,.filebtn:hover{filter:brightness(1.15)}
+button.primary{background:linear-gradient(135deg,#c52b87,#7046df);border:0}button:hover,.filebtn:hover{filter:brightness(1.15)}button.active{background:#542a72;border-color:#c45aff;box-shadow:0 0 0 1px #c45aff inset}
 .actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px}
 .filters{display:grid;grid-template-columns:2fr repeat(5,minmax(125px,1fr));gap:10px;margin-bottom:13px}
 .tablewrap{overflow:auto;border:1px solid #2a2935;border-radius:12px}
@@ -53,6 +53,8 @@ footer{color:#777483;font-size:11px;text-align:center;padding:8px}
     <div class="stat"><div class="stat-label">İletişime hazır</div><div class="stat-num" id="ready">0</div></div>
     <div class="stat"><div class="stat-label">Mesaj gönderildi</div><div class="stat-num" id="sent">0</div></div>
     <div class="stat"><div class="stat-label">Ajansa katıldı</div><div class="stat-num" id="joined">0</div></div>
+    <div class="stat"><div class="stat-label">Bugün takip</div><div class="stat-num" id="dueToday">0</div></div>
+    <div class="stat"><div class="stat-label">Takibi geciken</div><div class="stat-num" id="overdue">0</div></div>
   </section>
 
   <section class="panel">
@@ -104,6 +106,7 @@ footer{color:#777483;font-size:11px;text-align:center;padding:8px}
   <section class="panel">
     <div class="panel-head"><h2>Aday listesi</h2><div class="actions" style="margin:0"><button id="exportBtn">CSV dışa aktar</button><label class="filebtn">CSV içe aktar<input id="importFile" type="file" accept=".csv,text/csv" hidden></label><button id="backupBtn">JSON yedekle</button><label class="filebtn">JSON yedeğini geri yükle<input id="restoreFile" type="file" accept=".json,application/json" hidden></label><button id="demoBtn">Örnek kayıt ekle</button></div></div>
     <div class="muted" style="margin:-4px 0 12px">Öneri: Düzenli olarak JSON yedeği indirip bilgisayarında sakla. Geri yükleme mevcut listedeki kayıtların tamamının yerine geçer.</div>
+    <div class="actions" id="quickFilters" style="margin:0 0 13px"><button type="button" data-quick="all" class="active">Tüm adaylar</button><button type="button" data-quick="today">Bugün takip edilecekler</button><button type="button" data-quick="overdue">Takibi gecikenler</button><button type="button" data-quick="high">Yüksek öncelikliler</button></div>
     <div class="filters">
       <input id="search" placeholder="Kullanıcı adı veya notlarda ara">
       <select id="filterEligibility"><option value="">Tüm uygunluklar</option><option>Uygunluğu doğrulandı</option><option>Uygun değil</option><option>Belirsiz</option><option>Kontrol edilmedi</option></select>
@@ -134,6 +137,8 @@ function persist(){localStorage.setItem(KEY,JSON.stringify(creators));render()}
 function esc(s){return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
 function normUser(s){return s.trim().replace(/^@+/,'')}
 function id(){return (crypto.randomUUID?crypto.randomUUID():String(Date.now())+Math.random())}
+function localDate(){const d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')}
+function isActiveFollowup(c){return !['Ajansa katıldı','İlgilenmiyor'].includes(c.status)}
 function getForm(){return {id:document.querySelector('#editId').value||id(),username:normUser(username.value),profile:profile.value.trim()||('https://www.tiktok.com/@'+normUser(username.value)),followers:followers.value===''?'':Number(followers.value),live:live.value,eligibility:eligibility.value,status:status.value,checkedAt:checkedAt.value,source:source.value,category:category.value,priority:priority.value,followupAt:followupAt.value,notes:notes.value.trim(),updatedAt:new Date().toISOString()}}
 function resetForm(){creatorForm.reset();editId.value='';formTitle.textContent='Yeni yayıncı adayı ekle';saveBtn.textContent='Adayı kaydet';checkedAt.value=new Date().toISOString().slice(0,10)}
 function badge(s){let cls=s==='Uygunluğu doğrulandı'||s==='Ajansa katıldı'||s==='Cevap verdi'?'green':s==='Uygun değil'||s==='İlgilenmiyor'?'red':s==='Belirsiz'||s==='Mesaj gönderildi'||s==='İlgileniyor'?'yellow':'';return `<span class="tag ${cls}">${esc(s||'—')}</span>`}
@@ -142,14 +147,18 @@ function render(){
  ready.textContent=creators.filter(c=>c.eligibility==='Uygunluğu doğrulandı').length;
  sent.textContent=creators.filter(c=>['Mesaj gönderildi','Cevap verdi','İlgileniyor','İlgilenmiyor','Ajansa katıldı'].includes(c.status)).length;
  joined.textContent=creators.filter(c=>c.status==='Ajansa katıldı').length;
+ const today=localDate();
+ dueToday.textContent=creators.filter(c=>c.followupAt===today&&isActiveFollowup(c)).length;
+ overdue.textContent=creators.filter(c=>c.followupAt&&c.followupAt<today&&isActiveFollowup(c)).length;
  const q=search.value.toLowerCase().trim();
- const list=creators.filter(c=>(!q||(c.username+' '+c.notes+' '+(c.category||'')+' '+(c.source||'')).toLowerCase().includes(q))&&(!filterEligibility.value||c.eligibility===filterEligibility.value)&&(!filterStatus.value||c.status===filterStatus.value)&&(!filterLive.value||c.live===filterLive.value)&&(!filterSource.value||(c.source||'Manuel araştırma')===filterSource.value)&&(!filterCategory.value||(c.category||'Belirlenmedi')===filterCategory.value)).sort((a,b)=>(b.updatedAt||'').localeCompare(a.updatedAt||''));
+ const list=creators.filter(c=>(!q||(c.username+' '+c.notes+' '+(c.category||'')+' '+(c.source||'')).toLowerCase().includes(q))&&(!filterEligibility.value||c.eligibility===filterEligibility.value)&&(!filterStatus.value||c.status===filterStatus.value)&&(!filterLive.value||c.live===filterLive.value)&&(!filterSource.value||(c.source||'Manuel araştırma')===filterSource.value)&&(!filterCategory.value||(c.category||'Belirlenmedi')===filterCategory.value)&&(quickFilter==='all'||(quickFilter==='today'&&c.followupAt===today&&isActiveFollowup(c))||(quickFilter==='overdue'&&c.followupAt&&c.followupAt<today&&isActiveFollowup(c))||(quickFilter==='high'&&c.priority==='Yüksek'))).sort((a,b)=>(b.updatedAt||'').localeCompare(a.updatedAt||''));
  rows.innerHTML=list.map(c=>`<tr><td><strong>@${esc(c.username)}</strong><br><a href="${esc(c.profile)}" target="_blank" rel="noopener">Profili aç ↗</a>${c.notes?`<div class="muted" style="margin-top:4px">${esc(c.notes.slice(0,75))}</div>`:''}</td><td>${c.followers===''?'—':Number(c.followers).toLocaleString('tr-TR')}</td><td>${esc(c.category||'Belirlenmedi')}</td><td>${esc(c.source||'Manuel araştırma')}</td><td>${badge(c.priority||'Orta')}</td><td>${badge(c.live)}</td><td>${badge(c.eligibility)}</td><td>${badge(c.status)}</td><td>${esc(c.checkedAt||'—')}</td><td>${esc(c.followupAt||'—')}</td><td><div class="rowbuttons"><button data-action="edit" data-id="${esc(c.id)}">Düzenle</button><button data-action="select" data-id="${esc(c.id)}">Seç</button><button data-action="delete" data-id="${esc(c.id)}">Sil</button></div></td></tr>`).join('');
  empty.style.display=list.length?'none':'block';
 }
 creatorForm.addEventListener('submit',e=>{e.preventDefault();const c=getForm();if(!c.username){alert('Kullanıcı adı gerekli.');return}const duplicate=creators.find(x=>x.username.toLowerCase()===c.username.toLowerCase()&&x.id!==c.id);if(duplicate){alert('Bu kullanıcı adı zaten listede. Mevcut kaydı düzenleyebilirsin.');return}const i=creators.findIndex(x=>x.id===c.id);if(i>=0)creators[i]=c;else creators.push(c);selectedId=c.id;persist();resetForm();});
 resetBtn.onclick=resetForm;
 document.querySelectorAll('#search,#filterEligibility,#filterStatus,#filterLive,#filterSource,#filterCategory').forEach(el=>el.addEventListener('input',render));
+document.querySelector('#quickFilters').addEventListener('click',e=>{const b=e.target.closest('button[data-quick]');if(!b)return;quickFilter=b.dataset.quick;document.querySelectorAll('#quickFilters button').forEach(x=>x.classList.toggle('active',x===b));render()});
 rows.addEventListener('click',e=>{const b=e.target.closest('button[data-action]');if(!b)return;const c=creators.find(x=>x.id===b.dataset.id);if(!c)return;
  if(b.dataset.action==='delete'){if(confirm('@'+c.username+' kaydı silinsin mi?')){creators=creators.filter(x=>x.id!==c.id);if(selectedId===c.id)selectedId=null;persist()}}
  if(b.dataset.action==='select'){selectedId=c.id;updatePreview();alert('@'+c.username+' seçildi. Mesaj önizlemesini kontrol edebilirsin.')}
@@ -167,7 +176,7 @@ function updatePreview(){const c=creators.find(x=>x.id===selectedId);preview.tex
 messageTemplate.addEventListener('input',updatePreview);
 copyTemplate.onclick=async()=>{try{await navigator.clipboard.writeText(messageTemplate.value);alert('Şablon kopyalandı.')}catch{alert('Kopyalama engellendi; metni seçip kopyalayabilirsin.')}};
 copySelected.onclick=async()=>{const c=creators.find(x=>x.id===selectedId);if(!c){alert('Önce listeden bir aday seç.');return}const msg=makeMessage(c);preview.textContent=msg;try{await navigator.clipboard.writeText(msg);alert('@'+c.username+' için kişiselleştirilmiş mesaj kopyalandı.')}catch{alert('Mesaj hazırlandı. Önizlemeden kopyalayabilirsin.')}};
-checkedAt.value=new Date().toISOString().slice(0,10);render();updatePreview();
+checkedAt.value=localDate();render();updatePreview();
 </script>
 </body>
 </html>
